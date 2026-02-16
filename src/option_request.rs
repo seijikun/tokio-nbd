@@ -8,9 +8,9 @@
 /// https://github.com/NetworkBlockDevice/nbd/blob/master/doc/proto.md
 use int_enum::IntEnum;
 
-use crate::errors::OptionReplyError;
-use crate::info::InformationRequest;
-use crate::io::option_request::OptionRequestRaw;
+use crate::{
+    errors::OptionReplyError, info::InformationRequest, io::option_request::OptionRequestRaw,
+};
 
 /// Option request types sent by the client during NBD handshake negotiation.
 ///
@@ -116,9 +116,10 @@ pub(crate) enum OptionRequest {
 /// * `Err(OptionReplyError)` - If payload cannot be parsed
 fn parse_info_payload(data: &[u8]) -> Result<(String, Vec<InformationRequest>), OptionReplyError> {
     // Empty payload for default export with no specified info requests
-    let Some((&name_length, rest)) = data.split_first() else {
+    let Some((name_length, rest)) = data.split_first_chunk::<4>() else {
         return Ok((String::new(), vec![]));
     };
+    let name_length = u32::from_be_bytes(*name_length);
 
     let (name, rest) = if name_length == 0 {
         (String::new(), rest)
@@ -282,7 +283,7 @@ mod tests {
     #[test]
     fn test_parse_info_payload_with_name() {
         // Test with name only, no requests
-        let mut data = vec![5]; // Name length
+        let mut data = vec![0, 0, 0, 5]; // Name length
         data.extend_from_slice(b"hello"); // Name
         data.push(0); // 0 requests
 
