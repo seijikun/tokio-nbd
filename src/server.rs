@@ -637,6 +637,7 @@ where
                 for device in self.list_devices().await? {
                     responses.push(OptionReply::Server(device));
                 }
+                responses.push(OptionReply::Ack);
             }
             OptionRequest::StartTLS => unimplemented!(),
             OptionRequest::Info(name, _info_requests) | OptionRequest::Go(name, _info_requests) => {

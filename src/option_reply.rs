@@ -132,7 +132,11 @@ impl OptionReply {
     pub(crate) fn get_data(&self) -> Vec<u8> {
         match self {
             OptionReply::Ack => vec![],
-            OptionReply::Server(name) => name.as_bytes().to_vec(),
+            OptionReply::Server(name) => {
+                let mut data = (name.len() as u32).to_be_bytes().to_vec();
+                data.extend_from_slice(name.as_bytes());
+                data
+            }
             OptionReply::Info(payload) => payload.to_vec(),
             OptionReply::MetaContext(id, name) => {
                 let mut data = id.to_be_bytes().to_vec();
@@ -221,7 +225,12 @@ mod tests {
     fn test_option_reply_get_data_server() {
         let export_name = "test_export";
         let data = OptionReply::Server(export_name.to_string()).get_data();
-        assert_eq!(data, export_name.as_bytes());
+        assert_eq!(
+            data,
+            [
+                0, 0, 0, 11, b't', b'e', b's', b't', b'_', b'e', b'x', b'p', b'o', b'r', b't'
+            ]
+        );
     }
 
     #[test]
